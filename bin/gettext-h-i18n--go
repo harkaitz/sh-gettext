@@ -1,0 +1,18 @@
+#!/bin/sh -e
+##:
+#h: Usage: gettext-h-i18n--go GO...
+#h:
+#h: Print textx between l("TEXT") in go files. You must define
+#h: manually `func l(s string) string { return s }` function in
+#h: internationalizable packages.
+##:
+gettext_h_i18n__go() {
+    grep -o '[^a-ZA-Z0-9][lTL]("[^"]*")' "$@" \
+        | sed 's|^[^"]*"||;s|"[^"]*$||;'
+}
+if test @"$(basename "$0")" = @"gettext-h-i18n--go";then
+    case "${1}" in
+        ''|-h|--help) sed -n 's/^ *#h: \{0,1\}//p' "$0" ;;
+        *)            gettext_h_i18n__go "$@"; exit 0   ;;
+    esac
+fi

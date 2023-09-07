@@ -1,0 +1,136 @@
+#!/bin/sh -e
+##:
+#h: Usage: gettext-h-i18n ...
+#h:
+#h: Internationalize (i18n) a software project using "xgettext".
+#h:
+#h:   -V        : List available settings (put them in .gettext).
+#h:   -l        : List source code.
+#h:   -u        : Update ".po" files with new texts.
+#h:   -b        : Build the ".mo" files.
+#h:   -g go|... : Generate utility code, ie "i18n.go".
+#h:
+#h: Examples:
+#h:
+#h:   $ gettext-h-i18n -ubg go
+##:
+. gettext-h-i18n--toc
+gettext_h_i18n() {
+    local OPTIND optopt ops=
+    
+    ## Parse command line arguments.
+    while getopts "Vlubg" optopt; do
+        ops="${ops}${optopt}"
+        case $optopt in
+            V)  gettext_h_i18n_show_variables; return 0;;
+            \?) return 1;;
+        esac
+    done
+    shift $(( $OPTIND - 1 ))
+    
+    case "${ops}" in *g*) gettext_h_i18n_generate "$@" ;; esac
+    
+    gettext_h_i18n_check_variables
+    
+    case "${ops}" in *l*) gettext_h_i18n_list          ;; esac
+    case "${ops}" in *u*) gettext_h_i18n_update        ;; esac
+    case "${ops}" in *b*) gettext_h_i18n_build         ;; esac
+    
+}
+gettext_h_i18n_show_variables() {
+    cat <<-EOF
+	GETTEXT_H_FIND_CMD    : ${GETTEXT_H_FIND_CMD}
+	GETTEXT_H_LANGS       : ${GETTEXT_H_LANGS}
+	GETTEXT_H_DOMAIN      : ${GETTEXT_H_DOMAIN}
+	EOF
+}
+gettext_h_i18n_check_variables() {
+    local r=0
+    if test ! -n "${GETTEXT_H_FIND_CMD}"; then
+        echo >&2 "error: Please set GETTEXT_H_FIND_CMD."; r=1
+    fi
+    if test ! -n "${GETTEXT_H_LANGS}"; then
+        echo >&2 "error: Please set GETTEXT_H_LANGS."; r=1
+    fi
+    if test ! -n "${GETTEXT_H_DOMAIN}"; then
+        echo >&2 "error: Please set GETTEXT_H_DOMAIN."; r=1
+    fi
+    if ! which html2po >/dev/null 2>&1; then
+        echo >&2 "error: Please install translate-toolkit with html2po."; r=1
+    fi
+    return "${r}"
+}
+## -------------------------------------------------------------------
+gettext_h_i18n_list() {
+    eval "${GETTEXT_H_FIND_CMD}"
+}
+gettext_h_i18n_update() {
+    local s f b l po u
+    local tmp="$(mktemp)" pwd="$(pwd)"
+    local pot="locale/${GETTEXT_H_DOMAIN}.pot"
+    
+    ## Create pot.
+    gettext_h_i18n_list | gettext_h_i18n__toc > "${tmp}"
+    mkdir -p "$(dirname "${pot}")"
+    xgettext -L C -k_ -f "${tmp}" --from-code=UTF-8 -o "${pot}"
+    find . -iname '*.i18n.c' -delete
+    if test ! -e "${pot}"; then return 0; fi
+    
+    sed -i '/POT-Creation-Date:/d;s|\.i18n\.c:[0-9]||g' "${pot}"
+    
+    ## Perform updates.
+    for l in ${GETTEXT_H_LANGS}; do
+        po="locale/${l}/${GETTEXT_H_DOMAIN}.po"
+        if test -e "${po}"; then
+            cp "${po}" "${po}.t1"
+            msgmerge -N -o "${po}.t2" "${po}.t1" "${pot}" 2>/dev/null
+            msgattrib -o "${po}.t3" --no-obsolete "${po}.t2"
+            sed '/POT-Creation-Date:/d' "${po}.t3" > "${po}"
+            rm -f "${po}.t1" "${po}.t2" "${po}.t3"
+        else
+            mkdir -p "$(dirname "${po}")"
+            LANG=en_US.UTF-8          \
+                msginit               \
+                --input="${pot}"      \
+                --locale="${l}.UTF-8" \
+                --output="${po}"      \
+                --no-translator       \
+                2>&1 | sed '/^Created /d' >&2
+            sed -i '
+            /POT-Creation-Date:/d
+            /Content-Type:/s|charset=ASCII|charset=UTF-8|
+            ' "${po}"
+        fi
+        u="$(LANG=en_US.UTF-8 msgcmp "${po}" "${pot}" 2>&1 | grep 'message is untranslated' | wc -l)"
+        if test ! @"${u}" = @"0"; then
+            echo "${po}: ${u} translations missing."
+        fi
+    done
+}
+gettext_h_i18n_build() {
+    local po mof mod
+    
+    for po in $(test ! -d locale || find locale -name '*.po'); do
+        mod="$(dirname "$po")/LC_MESSAGES"
+        mof="${mod}/${GETTEXT_H_DOMAIN}.mo"
+        mkdir -p "${mod}"
+        msgfmt --output-file="${mof}" "${po}"
+        echo "${mof}"
+    done
+}
+gettext_h_i18n_generate() {
+    local a
+    mkdir -p locale
+    touch locale/gitkeep
+    for a in "$@"; do
+        GETTEXT_H_DOMAIN="${GETTEXT_H_DOMAIN}" gettext-h-i18n--"${a}"-gen
+    done
+}
+## -------------------------------------------------------------------
+if test -e ./.gettext; then . ./.gettext; fi
+if test @"$(basename "$0")" = @"gettext-h-i18n"; then
+    case "${1}" in
+        ''|-h|--help) sed -n 's/^ *#h: \{0,1\}//p' "$0" ;;
+        *)            gettext_h_i18n "$@"; exit 0 ;;
+    esac
+fi

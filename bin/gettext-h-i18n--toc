@@ -1,0 +1,27 @@
+#!/bin/sh -e
+##:
+#h: Usage: gettext-h-i18n--toc < FILE-LIST
+#h:
+#h: For each input file create a FILE.i18n file with it's texts
+#h: in C format _("TEXT"); This way xgettext(1) can be used with
+#h: unsupported programs.
+##:
+gettext_h_i18n__toc() {
+    local ifile isuff
+    
+    while read -r ifile; do
+        isuff="$(echo "${ifile}" | sed 's|.*\.||')"
+        if true; then
+            echo "void f() {" 
+            gettext-h-i18n--"${isuff}" "${ifile}" | sed 's|\(.*\)|    _("\1");|' 
+            echo "}"
+        fi > "${ifile}".i18n.c
+        echo "${ifile}".i18n.c
+    done
+}
+if test @"$(basename "$0")" = @"gettext-h-i18n--toc";then
+    case "${1}" in
+        -h|--help) sed -n 's/^ *#h: \{0,1\}//p' "$0" ;;
+        *)         gettext_h_i18n__toc "$@"; exit 0  ;;
+    esac
+fi
