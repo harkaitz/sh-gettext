@@ -5,7 +5,7 @@
 #h: Print texts between {{.T "TEXT"}} in html files.
 ##:
 gettext_h_i18n__html() {
-    grep -o '{{\.[TH] ".*"}}' "$@" \
+    grep -o '{{[\$]*\.[TH] ".*"}}' "$@" \
         | sed 's|^[^"]*"||;s|"[^"]*$||;'
 }
 if test @"$(basename "$0")" = @"gettext-h-i18n--html";then
