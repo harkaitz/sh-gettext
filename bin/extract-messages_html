@@ -1,0 +1,16 @@
+#!/bin/sh -e
+##:
+#h: Usage: extract-messages_html HTML...
+#h:
+#h: Print texts between {{.T "TEXT"}} in html files.
+##:
+extract_messages_html() {
+    grep -o '{{[\$]*\.[TH] ".*"}}' "$@" \
+        | sed 's|^[^"]*"||;s|"[^"]*$||;'
+}
+if test @"$(basename "$0")" = @"extract-messages_html";then
+    case "${1}" in
+        ''|-h|--help) sed -n 's/^ *#h: \{0,1\}//p' "$0"  ;;
+        *)            extract_messages_html "$@"; exit 0 ;;
+    esac
+fi

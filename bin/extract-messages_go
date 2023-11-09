@@ -1,0 +1,17 @@
+#!/bin/sh -e
+##:
+#h: Usage: extract-messages_go GO...
+#h:
+#h: Print texts between l("TEXT") in go files. Other tags supported
+#h: are: "T" and "L".
+##:
+extract_messages_go() {
+    grep -o '[^a-ZA-Z0-9][lTL]("[^"]*")' "$@" \
+        | sed 's|^[^"]*"||;s|"[^"]*$||;'
+}
+if test @"$(basename "$0")" = @"extract-messages_go";then
+    case "${1}" in
+        ''|-h|--help) sed -n 's/^ *#h: \{0,1\}//p' "$0" ;;
+        *)            extract_messages_go "$@"; exit 0   ;;
+    esac
+fi

@@ -13,7 +13,7 @@ gettext_h_i18n__toc() {
         isuff="$(echo "${ifile}" | sed 's|.*\.||')"
         if true; then
             echo "void f() {" 
-            gettext-h-i18n--"${isuff}" "${ifile}" | sed 's|\(.*\)|    _("\1");|' 
+            extract-messages_"${isuff}" "${ifile}" | sed 's|\(.*\)|    _("\1");|' 
             echo "}"
         fi > "${ifile}".i18n.c
         echo "${ifile}".i18n.c

@@ -1,41 +1,29 @@
 #!/bin/sh -e
 ##:
-#h: Usage: gettext-h-i18n ...
+#h: Usage: gettext-h-i18n -ub
 #h:
-#h: Internationalize (i18n) a software project using "xgettext".
-#h:
-#h:   -V        : List available settings (put them in .gettext).
-#h:   -l        : List source code.
-#h:   -u        : Update ".po" files with new texts.
-#h:   -b        : Build the ".mo" files.
-#h:   -g go|... : Generate utility code, ie "i18n.go".
-#h:
-#h: Examples:
-#h:
-#h:   $ gettext-h-i18n -ubg go
+#h: Internationalize (i18n) a software project using "xgettext". Read
+#h: the manual page "man gettext-h-i18n" for more info.
 ##:
 . gettext-h-i18n--toc
 gettext_h_i18n() {
     local OPTIND optopt ops=
     
     ## Parse command line arguments.
-    while getopts "Vlubg" optopt; do
+    while getopts "VlLub" optopt; do
         ops="${ops}${optopt}"
         case $optopt in
-            V)  gettext_h_i18n_show_variables; return 0;;
             \?) return 1;;
         esac
     done
     shift $(( $OPTIND - 1 ))
-    
-    case "${ops}" in *g*) gettext_h_i18n_generate "$@" ;; esac
-    
+
+    case "${ops}" in *V*) gettext_h_i18n_show_variables; return 0;; esac
     gettext_h_i18n_check_variables
-    
-    case "${ops}" in *l*) gettext_h_i18n_list          ;; esac
-    case "${ops}" in *u*) gettext_h_i18n_update        ;; esac
-    case "${ops}" in *b*) gettext_h_i18n_build         ;; esac
-    
+    case "${ops}" in *l*) gettext_h_i18n_list            ;; esac
+    case "${ops}" in *L*) gettext_h_i18n_list_extractors ;; esac
+    case "${ops}" in *u*) gettext_h_i18n_update          ;; esac
+    case "${ops}" in *b*) gettext_h_i18n_build           ;; esac
 }
 gettext_h_i18n_show_variables() {
     cat <<-EOF
@@ -63,6 +51,17 @@ gettext_h_i18n_check_variables() {
 ## -------------------------------------------------------------------
 gettext_h_i18n_list() {
     eval "${GETTEXT_H_FIND_CMD}"
+}
+gettext_h_i18n_list_extractors() {
+    local f s
+    gettext_h_i18n_list | while read -r f; do
+        s="$(basename "$f" | sed 's|.*\.||')"
+        if which extract-messages_"${s}" >/dev/null 2>&1; then
+            printf '%-50s %s\n' "${f}" "extract-messages_${s}"
+        else
+            printf '%-50s %s\n' "${f}" "NOT-FOUND:extract-messages_${s}"
+        fi
+    done
 }
 gettext_h_i18n_update() {
     local s f b l po u
@@ -109,7 +108,6 @@ gettext_h_i18n_update() {
 }
 gettext_h_i18n_build() {
     local po mof mod
-    
     for po in $(test ! -d locale || find locale -name '*.po'); do
         mod="$(dirname "$po")/LC_MESSAGES"
         mof="${mod}/${GETTEXT_H_DOMAIN}.mo"
@@ -118,16 +116,10 @@ gettext_h_i18n_build() {
         echo "${mof}"
     done
 }
-gettext_h_i18n_generate() {
-    local a
-    mkdir -p locale
-    touch locale/gitkeep
-    for a in "$@"; do
-        GETTEXT_H_DOMAIN="${GETTEXT_H_DOMAIN}" gettext-h-i18n--"${a}"-gen
-    done
-}
 ## -------------------------------------------------------------------
 if test -e ./.gettext; then . ./.gettext; fi
+if test -f ./gettext;  then . ./gettext ; fi
+if test -f ./GetText;  then . ./GetText ; fi
 if test @"$(basename "$0")" = @"gettext-h-i18n"; then
     case "${1}" in
         ''|-h|--help) sed -n 's/^ *#h: \{0,1\}//p' "$0" ;;
