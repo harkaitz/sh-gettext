@@ -9,7 +9,7 @@ install:
 install: install-license
 install-license: 
 	mkdir -p $(DESTDIR)$(PREFIX)/share/doc/$(PROJECT)
-	cp LICENSE  $(DESTDIR)$(PREFIX)/share/doc/$(PROJECT)
+	cp LICENSE $(DESTDIR)$(PREFIX)/share/doc/$(PROJECT)
 ## -- BLOCK:license --
 ## -- BLOCK:man --
 install: install-man
@@ -22,6 +22,7 @@ install: install-sh
 install-sh:
 	mkdir -p $(DESTDIR)$(PREFIX)/bin
 	cp bin/extract-messages_go $(DESTDIR)$(PREFIX)/bin
+	cp bin/genl10n_go       $(DESTDIR)$(PREFIX)/bin
 	cp bin/gettext-h-i18n--toc $(DESTDIR)$(PREFIX)/bin
 	cp bin/gettext-h-i18n   $(DESTDIR)$(PREFIX)/bin
 	cp bin/extract-messages_html $(DESTDIR)$(PREFIX)/bin

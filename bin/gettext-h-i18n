@@ -2,8 +2,21 @@
 ##:
 #h: Usage: gettext-h-i18n -ub
 #h:
-#h: Internationalize (i18n) a software project using "xgettext". Read
-#h: the manual page "man gettext-h-i18n" for more info.
+#h: Internationalize (i18n) a software project using "xgettext".
+#h:
+#h: The first step is to write a ".gettext/GetText/gettext" file
+#h: to specify which files to process, which languages to generate
+#h: with which domain.
+#h:
+#h: For example:
+#h:
+#h:     GETTEXT_H_FIND_CMD="find . -name '*.go' -or -name '*.html'"
+#h:     GETTEXT_H_LANGS="es eu"
+#h:     GETTEXT_H_DOMAIN="ubankw"
+#h:
+#h: Once wrote you can check the sourced are searched with (-l). Then
+#h: update dictionary files with (-u) and finally generate tables
+#h: with -b.
 ##:
 . gettext-h-i18n--toc
 gettext_h_i18n() {
