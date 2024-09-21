@@ -1,0 +1,24 @@
+#!/bin/sh -e
+##:
+#h: Usage: wds_gettext
+#h:
+#h: Update gettext dictionaries an tables.
+##:
+wds_gettext() {
+    gettext-h-i18n -ub
+}
+wds_gettext_match() {
+    if test -f GetText || test -f gettext || test -f .gettext; then
+        return 0
+    else
+        return 1
+    fi
+}
+## -------------------------------------------------------------------
+if test @"${SCRNAME:-$(basename "$0")}" = @"wds_gettext"; then
+    case "${1}" in
+        -h|--help) sed -n 's/^ *#h: \{0,1\}//p' "$0";;
+        --match)   wds_gettext_match "$2";;
+        *)         wds_gettext "$@"; exit 0;;
+    esac
+fi
